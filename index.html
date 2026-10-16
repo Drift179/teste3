@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sakura Gallery - Limpeza Inteligente</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sakura: {
+                            50: '#fff1f4',
+                            100: '#ffe4e9',
+                            200: '#fecdd6',
+                            300: '#fea5b4',
+                            400: '#fb7188',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                        },
+                        pastel: {
+                            cream: '#fdfbf7',
+                            peach: '#fff3ed',
+                            mint: '#f0fdf4',
+                            sky: '#f0f9ff',
+                            lavender: '#f5f3ff',
+                            blush: '#fff1f2',
+                            card: '#ffffff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Quicksand -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .sakura-bg-pattern {
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#fecdd6 0.8px, transparent 0.8px), radial-gradient(#fed7aa 0.8px, #fdfbf7 0.8px);
+            background-size: 28px 28px;
+            background-position: 0 0, 14px 14px;
+        }
+    </style>
+</head>
+<body class="sakura-bg-pattern text-slate-700 min-h-screen flex justify-center items-center p-0 sm:p-4 select-none">
+
+    <!-- Container Estilo Celular Responsivo (Perfeito para GitHub Pages) -->
+    <div id="app-container" class="w-full sm:max-w-md h-screen sm:h-[900px] bg-pastel-cream sm:rounded-[40px] shadow-2xl flex flex-col overflow-hidden relative border-0 sm:border-8 sm:border-white shadow-rose-200/50">
+        
+        <!-- Barra Superior Simulada -->
+        <div class="bg-white/90 backdrop-blur-md pt-3 px-6 pb-2 flex justify-between items-center text-xs text-slate-500 z-30 shrink-0 border-b border-rose-100/60">
+            <span id="current-time" class="font-bold text-slate-600">09:41</span>
+            <div class="flex items-center gap-2">
+                <span id="firebase-status" class="w-2 h-2 rounded-full bg-amber-400" title="Conectando ao Firebase..."></span>
+                <span id="auth-user-id" class="text-[9px] text-slate-400 font-mono truncate max-w-[80px]">Conectando...</span>
+                <i class="fa-solid fa-wifi text-[10px] text-rose-400"></i>
+                <div class="flex items-center text-rose-400 font-bold gap-0.5 text-[10px]">
+                    <span>99%</span>
+                    <i class="fa-solid fa-battery-three-quarters"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cabeçalho Sakura Gallery -->
+        <header class="px-5 py-3.5 bg-white/90 backdrop-blur-md border-b border-rose-100 flex items-center justify-between z-30 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sakura-300 to-rose-300 flex items-center justify-center text-white font-bold shadow-md shadow-rose-200">
+                    <i class="fa-solid fa-sakura text-lg animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base leading-tight text-slate-800 tracking-tight">Sakura Gallery</h1>
+                    <p class="text-[11px] text-rose-400 font-medium flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping"></span>
+                        Cloud Storage Ativo
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openAddModal()" class="w-9 h-9 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-200/60 flex items-center justify-center transition-all active:scale-95 shadow-sm" title="Adicionar Foto">
+                    <i class="fa-solid fa-plus text-sm"></i>
+                </button>
+                <button onclick="openStatsModal()" class="w-9 h-9 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 border border-rose-200/60 flex items-center justify-center transition-all active:scale-95 shadow-sm" title="Relatório">
+                    <i class="fa-solid fa-chart-pie text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Widget de Armazenamento -->
+        <section class="px-5 py-3 bg-gradient-to-b from-white/60 to-transparent shrink-0">
+            <div class="bg-white/80 backdrop-blur-xl border border-rose-100 rounded-3xl p-4 shadow-sm relative overflow-hidden">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-400 tracking-wide uppercase">Memória do Aparelho</span>
+                        <h2 id="storage-text" class="text-sm font-bold text-slate-700 mt-0.5">114 GB / 128 GB <span class="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full ml-1">Cheio</span></h2>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-emerald-600 font-bold block">Liberáveis</span>
+                        <span id="recoverable-size" class="text-xs font-extrabold text-emerald-500">~6.8 GB</span>
+                    </div>
+                </div>
+
+                <div class="w-full bg-rose-50 h-2.5 rounded-full overflow-hidden my-2.5 p-0.5 border border-rose-100">
+                    <div id="storage-bar" class="bg-gradient-to-r from-rose-400 to-amber-400 h-full rounded-full transition-all duration-700" style="width: 89%;"></div>
+                </div>
+
+                <button onclick="runSmartScan()" class="w-full bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500 text-white font-bold py-2.5 px-4 rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-rose-200 text-xs transition-all active:scale-98">
+                    <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+                    <span>Limpeza Inteligente de Duplicadas & Borradas</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Navegação por Abas (Filtros Estilo Fofo) -->
+        <nav class="flex gap-2 px-5 py-2 overflow-x-auto no-scrollbar shrink-0 bg-transparent">
+            <button onclick="switchTab('all')" id="tab-btn-all" class="tab-btn px-3.5 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all bg-rose-400 text-white shadow-sm shadow-rose-200">
+                <i class="fa-solid fa-images mr-1"></i> Galeria (<span id="count-all">0</span>)
+            </button>
+            <button onclick="switchTab('similar')" id="tab-btn-similar" class="tab-btn px-3.5 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-500 hover:bg-rose-50 border border-rose-100">
+                <i class="fa-solid fa-clone mr-1 text-amber-400"></i> Similares (<span id="count-similar">0</span>)
+            </button>
+            <button onclick="switchTab('blur')" id="tab-btn-blur" class="tab-btn px-3.5 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-500 hover:bg-rose-50 border border-rose-100">
+                <i class="fa-solid fa-camera-retro mr-1 text-rose-400"></i> Borradas (<span id="count-blur">0</span>)
+            </button>
+            <button onclick="switchTab('favorites')" id="tab-btn-favorites" class="tab-btn px-3.5 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-500 hover:bg-rose-50 border border-rose-100">
+                <i class="fa-solid fa-heart mr-1 text-rose-500"></i> Favoritas (<span id="count-favorites">0</span>)
+            </button>
+            <button onclick="switchTab('vault')" id="tab-btn-vault" class="tab-btn px-3.5 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-500 hover:bg-rose-50 border border-rose-100">
+                <i class="fa-solid fa-lock mr-1 text-purple-400"></i> Cofre (<span id="count-vault">0</span>)
+            </button>
+            <button onclick="switchTab('trash')" id="tab-btn-trash" class="tab-btn px-3.5 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-500 hover:bg-rose-50 border border-rose-100">
+                <i class="fa-solid fa-trash-can mr-1 text-rose-400"></i> Lixeira (<span id="count-trash">0</span>)
+            </button>
+        </nav>
+
+        <!-- Barra de Ações em Lote -->
+        <div id="batch-actions" class="mx-5 my-1 px-4 py-2 bg-rose-50 border border-rose-200 rounded-2xl flex justify-between items-center text-xs hidden shrink-0 shadow-sm">
+            <span id="selected-count-text" class="font-bold text-rose-600">0 selecionadas</span>
+            <div class="flex gap-2">
+                <button onclick="batchDelete()" class="bg-rose-500 text-white px-3 py-1 rounded-xl font-bold hover:bg-rose-600 shadow-sm">Apagar</button>
+                <button onclick="clearSelection()" class="bg-white text-slate-500 border border-rose-200 px-3 py-1 rounded-xl font-bold">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- Grade de Fotos Principal -->
+        <main id="gallery-container" class="flex-1 overflow-y-auto p-4 grid grid-cols-3 gap-2.5 content-start relative">
+            <!-- Itens injetados via JavaScript e Firebase -->
+        </main>
+
+        <!-- Rodapé & Alternador de Seleção -->
+        <footer class="bg-white/80 border-t border-rose-100 px-5 py-3 text-center shrink-0 z-20 flex justify-between items-center backdrop-blur-md">
+            <p class="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+                <i class="fa-solid fa-database text-rose-400"></i> Firebase Realtime Sync
+            </p>
+            <button onclick="toggleSelectMode()" id="select-mode-btn" class="text-xs text-rose-500 font-bold hover:underline">
+                Selecionar Várias
+            </button>
+        </footer>
+
+    </div>
+
+    <!-- Modal de Visualização de Foto (Lightbox) -->
+    <div id="photo-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex flex-col justify-between p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="flex justify-between items-center text-slate-700">
+            <button onclick="closePhotoModal()" class="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-rose-50">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <span id="modal-tag" class="text-xs px-3.5 py-1 rounded-full font-bold bg-rose-100 text-rose-600 border border-rose-200">Cenário Anime</span>
+            <button onclick="toggleFavoriteCurrent()" class="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-rose-50">
+                <i id="modal-fav-icon" class="fa-solid fa-heart text-sm text-slate-300"></i>
+            </button>
+        </div>
+
+        <div class="flex-1 flex items-center justify-center my-4 relative">
+            <img id="modal-img" src="" alt="Foto Ampliada" class="max-h-[60vh] max-w-full rounded-3xl shadow-xl object-contain border-4 border-white bg-white">
+        </div>
+
+        <div class="bg-white border border-rose-100 p-4 rounded-3xl flex flex-col gap-3 shadow-xl">
+            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                <div class="bg-rose-50/60 p-2.5 rounded-2xl border border-rose-100/50">
+                    <span class="text-slate-400 block mb-0.5 font-medium">Tamanho</span>
+                    <span id="modal-size" class="font-bold text-slate-700">3.4 MB</span>
+                </div>
+                <div class="bg-rose-50/60 p-2.5 rounded-2xl border border-rose-100/50">
+                    <span class="text-slate-400 block mb-0.5 font-medium">Resolução</span>
+                    <span id="modal-res" class="font-bold text-slate-700">1080x1920</span>
+                </div>
+                <div class="bg-rose-50/60 p-2.5 rounded-2xl border border-rose-100/50">
+                    <span class="text-slate-400 block mb-0.5 font-medium">Data</span>
+                    <span id="modal-date" class="font-bold text-slate-700">Hoje</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="modal-vault-btn" onclick="toggleVaultCurrentPhoto()" class="bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 font-bold py-3 px-3 rounded-2xl flex items-center justify-center gap-1.5 transition-all text-xs shadow-sm">
+                    <i class="fa-solid fa-lock"></i> Cofre
+                </button>
+                <button id="modal-action-btn" onclick="deleteCurrentModalPhoto()" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all text-xs shadow-sm">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Mover para Lixeira</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Foto (Upload Real ou URL) -->
+    <div id="add-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-rose-100 w-full max-w-sm rounded-[32px] p-6 shadow-2xl relative">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-rose-500"></i> Adicionar Foto
+                </h3>
+                <button onclick="closeAddModal()" class="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 mb-5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Escolher do Dispositivo (Galeria)</label>
+                    <input type="file" id="file-input" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-2xl file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 cursor-pointer">
+                </div>
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-rose-100"></div>
+                    <span class="flex-shrink mx-3 text-[10px] text-slate-400 font-bold uppercase">Ou via Link Web</span>
+                    <div class="flex-grow border-t border-rose-100"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">URL da Imagem</label>
+                    <input type="text" id="input-url" placeholder="https://exemplo.com/foto.jpg" class="w-full bg-rose-50/50 border border-rose-200 rounded-2xl px-3.5 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Categoria / Análise</label>
+                    <select id="input-category" class="w-full bg-rose-50/50 border border-rose-200 rounded-2xl px-3.5 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-medium">
+                        <option value="all">Galeria Normal</option>
+                        <option value="similar">Similares / Duplicada</option>
+                        <option value="blur">Borradas / Baixa Qualidade</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">Etiqueta</label>
+                    <input type="text" id="input-tag" placeholder="Ex: Viagem Sakura" class="w-full bg-rose-50/50 border border-rose-200 rounded-2xl px-3.5 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-medium" value="Momento Fofo">
+                </div>
+            </div>
+
+            <button onclick="addNewPhoto()" class="w-full bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white font-bold py-3 rounded-2xl transition-all text-xs shadow-md shadow-rose-200">
+                Salvar no Firebase
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Relatório de Armazenamento -->
+    <div id="stats-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-rose-100 w-full max-w-sm rounded-[32px] p-6 shadow-2xl relative">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-rose-500"></i> Relatório de Memória
+                </h3>
+                <button onclick="closeStatsModal()" class="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 mb-6">
+                <div class="bg-rose-50/50 border border-rose-100 p-3.5 rounded-2xl flex justify-between items-center text-xs">
+                    <span class="text-slate-600 font-medium">Fotos na Nuvem</span>
+                    <span id="stat-total" class="font-bold text-rose-500">0 fotos</span>
+                </div>
+                <div class="bg-rose-50/50 border border-rose-100 p-3.5 rounded-2xl flex justify-between items-center text-xs">
+                    <span class="text-slate-600 font-medium">Itens na Lixeira</span>
+                    <span id="stat-trash" class="font-bold text-rose-400">0 fotos</span>
+                </div>
+                <div class="bg-rose-50/50 border border-rose-100 p-3.5 rounded-2xl flex justify-between items-center text-xs">
+                    <span class="text-slate-600 font-medium">Protegidos no Cofre</span>
+                    <span id="stat-vault" class="font-bold text-purple-500">0 fotos</span>
+                </div>
+            </div>
+
+            <button onclick="closeStatsModal()" class="w-full bg-rose-50 hover:bg-rose-100 text-slate-600 font-bold py-3 rounded-2xl transition-all text-xs">
+                Fechar Relatório
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal PIN do Cofre -->
+    <div id="pin-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white border border-purple-100 w-full max-w-xs rounded-[32px] p-6 shadow-2xl text-center">
+            <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-2xl mx-auto flex items-center justify-center mb-3 border border-purple-100 shadow-sm">
+                <i class="fa-solid fa-lock text-lg"></i>
+            </div>
+            <h3 class="font-bold text-base text-slate-800">Cofre Protegido</h3>
+            <p class="text-xs text-slate-400 mt-1 mb-4">Insira o PIN de 4 dígitos (Padrão: 1234)</p>
+            
+            <input type="password" id="pin-input" maxlength="4" placeholder="••••" class="w-32 mx-auto text-center tracking-widest text-lg bg-purple-50/60 border border-purple-200 rounded-2xl py-2 mb-4 font-bold text-purple-600 focus:outline-none">
+
+            <div class="flex gap-2">
+                <button onclick="closePinModal()" class="flex-1 bg-slate-100 text-slate-600 font-bold py-2.5 rounded-2xl text-xs">Cancelar</button>
+                <button onclick="verifyPin()" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-2.5 rounded-2xl text-xs shadow-md shadow-purple-200">Desbloquear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Notificação -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white border border-rose-200 text-slate-700 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-50 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+        <div id="toast-icon" class="w-7 h-7 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-check text-xs"></i>
+        </div>
+        <p id="toast-msg" class="text-xs font-bold">Ação realizada!</p>
+    </div>
+
+    <!-- Scripts do Firebase via ESM (Compatível com GitHub Pages) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref, set, onValue, push, update } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        // Configuração exata do Firebase fornecida pelo usuário
+        const firebaseConfig = {
+            apiKey: "AIzaSyD3Q2P6lch9XxxYlJoEsdqqwwt3KBJgpFc",
+            authDomain: "projeto-a08cb.firebaseapp.com",
+            databaseURL: "https://projeto-a08cb-default-rtdb.firebaseio.com",
+            projectId: "projeto-a08cb",
+            storageBucket: "projeto-a08cb.firebasestorage.app",
+            messagingSenderId: "996658403778",
+            appId: "1:996658403778:web:665022027f7d0e8b9a5e5b",
+            measurementId: "G-2SHL9B8XYC"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Estado Global da Aplicação
+        window.photosData = {};
+        window.currentTab = 'all';
+        window.currentModalPhotoKey = null;
+        window.selectMode = false;
+        window.selectedKeys = new Set();
+        window.vaultUnlocked = false;
+
+        // Fotos padrão iniciais caso o banco esteja vazio
+        const defaultPhotos = {
+            "p1": { url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400", category: "similar", tag: "Cenário Sakura", size: "3.2 MB", res: "1080x1920", date: "Ontem", trash: false, vault: false, favorite: true },
+            "p2": { url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400", category: "similar", tag: "Duplicada 1", size: "3.1 MB", res: "1080x1920", date: "Ontem", trash: false, vault: false, favorite: false },
+            "p3": { url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400", category: "blur", tag: "Foto Borrada", size: "1.8 MB", res: "720x1280", date: "12 Out", trash: false, vault: false, favorite: false },
+            "p4": { url: "https://images.unsplash.com/photo-1563089145-599997674d42?w=400", category: "all", tag: "Cofre Secreto", size: "2.4 MB", res: "1080x1920", date: "05 Out", trash: false, vault: true, favorite: true }
+        };
+
+        // Autenticação Anônima Automática para persistência imediata
+        signInAnonymously(auth).then(() => {
+            console.log("Autenticado anonimamente no Firebase.");
+        }).catch((error) => {
+            console.error("Erro na autenticação anônima:", error);
+        });
+
+        // Monitorar Estado de Auth e Sincronizar Banco de Dados
+        onAuthStateChanged(auth, (user) => {
+            const statusIndicator = document.getElementById('firebase-status');
+            const authUserLabel = document.getElementById('auth-user-id');
+
+            if (user) {
+                statusIndicator.className = "w-2 h-2 rounded-full bg-emerald-500 shadow-sm";
+                statusIndicator.title = "Firebase Conectado e Sincronizado";
+                authUserLabel.innerText = `ID: ${user.uid.substring(0, 6)}...`;
+
+                // Referência no Realtime Database
+                const photosRef = ref(db, 'galeria_anime_limpeza/photos');
+                
+                onValue(photosRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        window.photosData = data;
+                    } else {
+                        set(photosRef, defaultPhotos);
+                        window.photosData = defaultPhotos;
+                    }
+                    renderGallery();
+                }, (error) => {
+                    console.error("Erro ao ler dados do Firebase:", error);
+                    statusIndicator.className = "w-2 h-2 rounded-full bg-rose-500";
+                });
+            } else {
+                statusIndicator.className = "w-2 h-2 rounded-full bg-amber-400";
+                authUserLabel.innerText = "Aguardando...";
+            }
+        });
+
+        // Relógio do Celular
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('current-time').innerText = `${h}:${m}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Renderizar Galeria e Estatísticas
+        window.renderGallery = function() {
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = '';
+
+            const keys = Object.keys(window.photosData);
+            let cAll = 0, cSimilar = 0, cBlur = 0, cFav = 0, cVault = 0, cTrash = 0;
+
+            keys.forEach(key => {
+                const p = window.photosData[key];
+                if (p.trash) {
+                    cTrash++;
+                } else {
+                    cAll++;
+                    if (p.category === 'similar') cSimilar++;
+                    if (p.category === 'blur') cBlur++;
+                    if (p.favorite) cFav++;
+                    if (p.vault) cVault++;
+                }
+            });
+
+            document.getElementById('count-all').innerText = cAll - cVault;
+            document.getElementById('count-similar').innerText = cSimilar;
+            document.getElementById('count-blur').innerText = cBlur;
+            document.getElementById('count-favorites').innerText = cFav;
+            document.getElementById('count-vault').innerText = cVault;
+            document.getElementById('count-trash').innerText = cTrash;
+
+            document.getElementById('stat-total').innerText = `${keys.length} fotos`;
+            document.getElementById('stat-trash').innerText = `${cTrash} fotos`;
+            document.getElementById('stat-vault').innerText = `${cVault} fotos`;
+
+            // Filtrar abas
+            const filteredKeys = keys.filter(key => {
+                const p = window.photosData[key];
+                if (window.currentTab === 'trash') return p.trash;
+                if (window.currentTab === 'vault') return p.vault && !p.trash;
+                if (p.trash || p.vault) return false;
+                if (window.currentTab === 'all') return true;
+                if (window.currentTab === 'favorites') return p.favorite;
+                return p.category === window.currentTab;
+            });
+
+            // Se for aba Cofre e não estiver desbloqueada, pedir PIN
+            if (window.currentTab === 'vault' && !window.vaultUnlocked) {
+                container.innerHTML = `
+                    <div class="col-span-3 flex flex-col items-center justify-center py-20 text-center">
+                        <div class="w-16 h-16 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-400 mb-3 shadow-sm cursor-pointer" onclick="openPinModal()">
+                            <i class="fa-solid fa-lock text-2xl"></i>
+                        </div>
+                        <p class="font-bold text-slate-600">Cofre Bloqueado</p>
+                        <p class="text-xs text-slate-400 mt-1 mb-3">Toque para inserir seu PIN de acesso.</p>
+                        <button onclick="openPinModal()" class="bg-purple-500 text-white px-4 py-2 rounded-2xl text-xs font-bold shadow-md shadow-purple-200">Desbloquear Cofre</button>
+                    </div>
+                `;
+                return;
+            }
+
+            if (filteredKeys.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-3 flex flex-col items-center justify-center py-20 text-center text-slate-400">
+                        <div class="w-16 h-16 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-400 mb-3 shadow-sm">
+                            <i class="fa-solid fa-face-smile-wink text-2xl"></i>
+                        </div>
+                        <p class="font-bold text-slate-600">Pasta limpa e organizada!</p>
+                        <p class="text-xs text-slate-400 mt-1">Nenhum item por aqui no momento.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredKeys.forEach(key => {
+                const photo = window.photosData[key];
+                const item = document.createElement('div');
+                const isSelected = window.selectedKeys.has(key);
+
+                item.className = `relative group aspect-square rounded-2xl overflow-hidden bg-white border ${isSelected ? 'border-rose-500 ring-2 ring-rose-300' : 'border-rose-100/80'} cursor-pointer shadow-sm active:scale-95 transition-all`;
+                
+                item.onclick = () => {
+                    if (window.selectMode) {
+                        toggleSelectItem(key);
+                    } else {
+                        openPhotoModal(key);
+                    }
+                };
+
+                let badgeColor = 'bg-rose-400 text-white';
+                if (photo.category === 'blur') badgeColor = 'bg-amber-400 text-white';
+                if (photo.category === 'similar') badgeColor = 'bg-pink-400 text-white';
+                if (photo.vault) badgeColor = 'bg-purple-400 text-white';
+
+                item.innerHTML = `
+                    <img src="${photo.url}" alt="Foto" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400'">
+                    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/60 via-slate-900/10 to-transparent p-2 flex justify-between items-end">
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-lg backdrop-blur-md ${badgeColor} shadow-sm">${photo.tag}</span>
+                        ${photo.favorite ? '<i class="fa-solid fa-heart text-rose-400 text-xs drop-shadow"></i>' : ''}
+                    </div>
+                    ${window.selectMode ? `
+                        <div class="absolute top-2 right-2 w-6 h-6 rounded-full ${isSelected ? 'bg-rose-500 text-white' : 'bg-white/85 border border-rose-200 text-transparent'} flex items-center justify-center text-xs shadow-sm">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    ` : ''}
+                    ${photo.trash ? '<div class="absolute inset-0 bg-rose-950/40 backdrop-blur-[2px] flex items-center justify-center"><i class="fa-solid fa-trash-can text-white text-xl"></i></div>' : ''}
+                `;
+                container.appendChild(item);
+            });
+        };
+
+        // Trocar Abas
+        window.switchTab = function(tab) {
+            if (tab === 'vault' && !window.vaultUnlocked) {
+                openPinModal();
+                return;
+            }
+            window.currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-3.5 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all bg-white text-slate-500 hover:bg-rose-50 border border-rose-100';
+            });
+            const activeBtn = document.getElementById(`tab-btn-${tab}`);
+            if (activeBtn) {
+                activeBtn.className = 'tab-btn px-3.5 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all bg-rose-400 text-white shadow-sm shadow-rose-200';
+            }
+            renderGallery();
+        };
+
+        // Modal Lightbox
+        window.openPhotoModal = function(key) {
+            window.currentModalPhotoKey = key;
+            const photo = window.photosData[key];
+            if (!photo) return;
+
+            document.getElementById('modal-img').src = photo.url;
+            document.getElementById('modal-tag').innerText = photo.tag;
+            document.getElementById('modal-size').innerText = photo.size;
+            document.getElementById('modal-res').innerText = photo.res;
+            document.getElementById('modal-date').innerText = photo.date;
+
+            const favIcon = document.getElementById('modal-fav-icon');
+            favIcon.className = photo.favorite ? "fa-solid fa-heart text-sm text-rose-500" : "fa-solid fa-heart text-sm text-slate-300";
+
+            const actionBtn = document.getElementById('modal-action-btn');
+            const vaultBtn = document.getElementById('modal-vault-btn');
+
+            vaultBtn.innerHTML = photo.vault ? '<i class="fa-solid fa-lock-open"></i> Tirar do Cofre' : '<i class="fa-solid fa-lock"></i> Cofre';
+
+            if (photo.trash) {
+                actionBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i><span>Restaurar Foto</span>';
+                actionBtn.className = 'flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all text-xs shadow-sm';
+                actionBtn.onclick = restoreCurrentPhoto;
+            } else {
+                actionBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i><span>Mover para Lixeira</span>';
+                actionBtn.className = 'flex-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold py-3 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all text-xs shadow-sm';
+                actionBtn.onclick = deleteCurrentModalPhoto;
+            }
+
+            const modal = document.getElementById('photo-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        };
+
+        window.closePhotoModal = function() {
+            const modal = document.getElementById('photo-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        // Funções de Ação no Banco de Dados Firebase
+        window.deleteCurrentModalPhoto = function() {
+            if (!window.currentModalPhotoKey) return;
+            const photoRef = ref(db, `galeria_anime_limpeza/photos/${window.currentModalPhotoKey}`);
+            update(photoRef, { trash: true }).then(() => {
+                closePhotoModal();
+                showToast('Foto movida para a lixeira!', 'fa-trash-can', 'rose');
+            });
+        };
+
+        window.restoreCurrentPhoto = function() {
+            if (!window.currentModalPhotoKey) return;
+            const photoRef = ref(db, `galeria_anime_limpeza/photos/${window.currentModalPhotoKey}`);
+            update(photoRef, { trash: false }).then(() => {
+                closePhotoModal();
+                showToast('Foto restaurada com sucesso!', 'fa-rotate-left', 'emerald');
+            });
+        };
+
+        window.toggleFavoriteCurrent = function() {
+            if (!window.currentModalPhotoKey) return;
+            const photo = window.photosData[window.currentModalPhotoKey];
+            const newFav = !photo.favorite;
+            const photoRef = ref(db, `galeria_anime_limpeza/photos/${window.currentModalPhotoKey}`);
+            update(photoRef, { favorite: newFav }).then(() => {
+                window.photosData[window.currentModalPhotoKey].favorite = newFav;
+                const favIcon = document.getElementById('modal-fav-icon');
+                favIcon.className = newFav ? "fa-solid fa-heart text-sm text-rose-500" : "fa-solid fa-heart text-sm text-slate-300";
+                showToast(newFav ? 'Adicionada às favoritas!' : 'Removida das favoritas.', 'fa-heart', 'rose');
+                renderGallery();
+            });
+        };
+
+        window.toggleVaultCurrentPhoto = function() {
+            if (!window.currentModalPhotoKey) return;
+            const photo = window.photosData[window.currentModalPhotoKey];
+            const newVault = !photo.vault;
+            const photoRef = ref(db, `galeria_anime_limpeza/photos/${window.currentModalPhotoKey}`);
+            update(photoRef, { vault: newVault }).then(() => {
+                closePhotoModal();
+                showToast(newVault ? 'Guardada no cofre seguro!' : 'Retirada do cofre.', 'fa-lock', 'purple');
+            });
+        };
+
+        // Adicionar Foto (Upload Base64 ou URL)
+        window.openAddModal = function() {
+            document.getElementById('add-modal').classList.remove('hidden');
+        };
+        window.closeAddModal = function() {
+            document.getElementById('add-modal').classList.add('hidden');
+        };
+
+        window.addNewPhoto = function() {
+            const fileInput = document.getElementById('file-input');
+            const urlInput = document.getElementById('input-url').value.trim();
+            const category = document.getElementById('input-category').value;
+            const tag = document.getElementById('input-tag').value.trim() || 'Nova Foto';
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    savePhotoToFirebase(e.target.result, category, tag);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else if (urlInput) {
+                savePhotoToFirebase(urlInput, category, tag);
+            } else {
+                showToast('Selecione um arquivo ou informe uma URL!', 'fa-triangle-exclamation', 'rose');
+            }
+        };
+
+        function savePhotoToFirebase(url, category, tag) {
+            const newPhotoRef = push(ref(db, 'galeria_anime_limpeza/photos'));
+            set(newPhotoRef, {
+                url: url,
+                category: category,
+                tag: tag,
+                size: `${(Math.random() * 3 + 1.2).toFixed(1)} MB`,
+                res: '1080x1920',
+                date: 'Hoje',
+                trash: false,
+                vault: false,
+                favorite: false
+            }).then(() => {
+                closeAddModal();
+                document.getElementById('input-url').value = '';
+                document.getElementById('file-input').value = '';
+                showToast('Foto salva e sincronizada na nuvem!', 'fa-cloud-arrow-up', 'emerald');
+            });
+        }
+
+        // Limpeza Inteligente Automática
+        window.runSmartScan = function() {
+            let countCleaned = 0;
+            const updates = {};
+
+            Object.keys(window.photosData).forEach(key => {
+                const p = window.photosData[key];
+                if ((p.category === 'similar' || p.category === 'blur') && !p.trash && !p.vault) {
+                    updates[`${key}/trash`] = true;
+                    countCleaned++;
+                }
+            });
+
+            if (countCleaned === 0) {
+                showToast('Nenhuma foto duplicada ou borrada encontrada!', 'fa-face-smile', 'emerald');
+                return;
+            }
+
+            update(ref(db, 'galeria_anime_limpeza/photos'), updates).then(() => {
+                showToast(`Limpeza IA concluída! ~${(countCleaned * 2.1).toFixed(1)} GB liberados.`, 'fa-wand-magic-sparkles', 'emerald');
+            });
+        };
+
+        // Seleção Múltipla
+        window.toggleSelectMode = function() {
+            window.selectMode = !window.selectMode;
+            window.selectedKeys.clear();
+            const btn = document.getElementById('select-mode-btn');
+            const batchBar = document.getElementById('batch-actions');
+
+            if (window.selectMode) {
+                btn.innerText = 'Concluir';
+                batchBar.classList.remove('hidden');
+            } else {
+                btn.innerText = 'Selecionar Várias';
+                batchBar.classList.add('hidden');
+            }
+            renderGallery();
+        };
+
+        window.toggleSelectItem = function(key) {
+            if (window.selectedKeys.has(key)) {
+                window.selectedKeys.delete(key);
+            } else {
+                window.selectedKeys.add(key);
+            }
+            document.getElementById('selected-count-text').innerText = `${window.selectedKeys.size} selecionadas`;
+            renderGallery();
+        };
+
+        window.batchDelete = function() {
+            if (window.selectedKeys.size === 0) return;
+            const updates = {};
+            window.selectedKeys.forEach(key => {
+                updates[`${key}/trash`] = true;
+            });
+            update(ref(db, 'galeria_anime_limpeza/photos'), updates).then(() => {
+                window.selectedKeys.clear();
+                window.toggleSelectMode();
+                showToast('Itens movidos para a lixeira!', 'fa-trash-can', 'rose');
+            });
+        };
+
+        window.clearSelection = function() {
+            window.selectedKeys.clear();
+            window.toggleSelectMode();
+        };
+
+        // Modais Relatório & PIN
+        window.openStatsModal = function() {
+            document.getElementById('stats-modal').classList.remove('hidden');
+        };
+        window.closeStatsModal = function() {
+            document.getElementById('stats-modal').classList.add('hidden');
+        };
+
+        window.openPinModal = function() {
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-modal').classList.remove('hidden');
+        };
+        window.closePinModal = function() {
+            document.getElementById('pin-modal').classList.add('hidden');
+        };
+
+        window.verifyPin = function() {
+            const pin = document.getElementById('pin-input').value;
+            if (pin === '1234') {
+                window.vaultUnlocked = true;
+                closePinModal();
+                switchTab('vault');
+                showToast('Cofre desbloqueado com sucesso!', 'fa-lock-open', 'purple');
+            } else {
+                showToast('PIN incorreto! Tente 1234', 'fa-triangle-exclamation', 'rose');
+            }
+        };
+
+        // Toast de Notificação
+        window.showToast = function(message, iconClass, theme) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+            toastIcon.innerHTML = `<i class="fa-solid ${iconClass} text-xs"></i>`;
+
+            if (theme === 'emerald') {
+                toastIcon.className = 'w-7 h-7 rounded-full bg-emerald-100 text-emerald-500 flex items-center justify-center shrink-0';
+            } else if (theme === 'purple') {
+                toastIcon.className = 'w-7 h-7 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center shrink-0';
+            } else {
+                toastIcon.className = 'w-7 h-7 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center shrink-0';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3200);
+        };
+    </script>
+</body>
+</html>
